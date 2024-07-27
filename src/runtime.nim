@@ -1,4 +1,4 @@
-import os, asyncdispatch, js_bindings, js_constants, server, js_api/console, js_api/timers
+import os, asyncdispatch, js_bindings, js_constants, server, js_api/console, js_api/timers, filesystem
 
 proc main() {.async.} =
   if paramCount() != 1:
@@ -19,6 +19,7 @@ proc main() {.async.} =
     createConsoleObject(cast[JSContextRef](globalCtx))
     createServerObject(cast[JSContextRef](globalCtx))
     addTimerFunctions(cast[JSContextRef](globalCtx))
+    addFileSystemFunctions(cast[JSContextRef](globalCtx))
     
     let scriptString = JSStringCreateWithUTF8CString(scriptContent.cstring)
     var exception: JSValueRef = NULL_JS_VALUE
