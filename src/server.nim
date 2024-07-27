@@ -33,13 +33,6 @@ proc serverCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObje
   JSValueMakeUndefined(ctx)
 
 proc createServerObject*(ctx: JSContextRef) =
-  let globalObject = JSContextGetGlobalObject(ctx)
-  let serverName = JSStringCreateWithUTF8CString("myruntime")
-  let serverObject = JSObjectMake(ctx, nil, nil)
-  JSObjectSetProperty(ctx, globalObject, serverName, cast[JSValueRef](serverObject), kJSPropertyAttributeNone, nil)
-  JSStringRelease(serverName)
-
-  let serverMethodName = JSStringCreateWithUTF8CString("server")
-  let serverMethod = JSObjectMakeFunctionWithCallback(ctx, serverMethodName, serverCallback)
-  JSObjectSetProperty(ctx, serverObject, serverMethodName, cast[JSValueRef](serverMethod), kJSPropertyAttributeNone, nil)
-  JSStringRelease(serverMethodName)
+  setupJSObjectFunctions(ctx, "myruntime", @[
+    ("server", serverCallback)
+  ])

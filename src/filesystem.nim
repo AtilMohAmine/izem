@@ -37,24 +37,8 @@ proc fileExistsCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JS
   return JSValueMakeBoolean(ctx, fileExists(filePath).cint)
 
 proc addFileSystemFunctions*(ctx: JSContextRef) =
-  let globalObject = JSContextGetGlobalObject(ctx)
-  
-  let fsName = JSStringCreateWithUTF8CString("fs")
-  let fsObject = JSObjectMake(ctx, nil, nil)
-  JSObjectSetProperty(ctx, globalObject, fsName, cast[JSValueRef](fsObject), kJSPropertyAttributeNone, nil)
-  JSStringRelease(fsName)
-
-  let readFileName = JSStringCreateWithUTF8CString("readFile")
-  let readFileFunc = JSObjectMakeFunctionWithCallback(ctx, readFileName, readFileCallback)
-  JSObjectSetProperty(ctx, fsObject, readFileName, cast[JSValueRef](readFileFunc), kJSPropertyAttributeNone, nil)
-  JSStringRelease(readFileName)
-
-  let writeFileName = JSStringCreateWithUTF8CString("writeFile")
-  let writeFileFunc = JSObjectMakeFunctionWithCallback(ctx, writeFileName, writeFileCallback)
-  JSObjectSetProperty(ctx, fsObject, writeFileName, cast[JSValueRef](writeFileFunc), kJSPropertyAttributeNone, nil)
-  JSStringRelease(writeFileName)
-
-  let fileExistsName = JSStringCreateWithUTF8CString("fileExists")
-  let fileExistsFunc = JSObjectMakeFunctionWithCallback(ctx, fileExistsName, fileExistsCallback)
-  JSObjectSetProperty(ctx, fsObject, fileExistsName, cast[JSValueRef](fileExistsFunc), kJSPropertyAttributeNone, nil)
-  JSStringRelease(fileExistsName)
+  setupJSObjectFunctions(ctx, "fs", @[
+    ("readFile", readFileCallback),
+    ("writeFile", writeFileCallback),
+    ("fileExists", fileExistsCallback)
+  ])

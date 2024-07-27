@@ -24,14 +24,6 @@ proc consoleLogCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JS
   return NULL_JS_VALUE
 
 proc createConsoleObject*(ctx: JSContextRef) =
-  let globalObject = JSContextGetGlobalObject(ctx)
-  
-  let consoleName = JSStringCreateWithUTF8CString("console")
-  let consoleObject = JSObjectMake(ctx, nil, nil)
-  JSObjectSetProperty(ctx, globalObject, consoleName,  cast[JSValueRef](consoleObject), kJSPropertyAttributeNone, nil)
-  JSStringRelease(consoleName)
-
-  let logName = JSStringCreateWithUTF8CString("log")
-  let logFunction = JSObjectMakeFunctionWithCallback(ctx, logName, consoleLogCallback)
-  JSObjectSetProperty(ctx, consoleObject, logName, cast[JSValueRef](logFunction), kJSPropertyAttributeNone, nil)
-  JSStringRelease(logName)
+  setupJSObjectFunctions(ctx, "console", @[
+    ("log", consoleLogCallback)
+  ])

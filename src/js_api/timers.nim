@@ -1,4 +1,4 @@
-import tables, asyncdispatch, ../js_bindings, ../js_constants
+import tables, asyncdispatch, ../js_bindings, ../js_constants, ../js_utils
 
 type
   TimerID* = int
@@ -90,24 +90,9 @@ proc clearTimerCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JS
   return JSValueMakeUndefined(ctx)
 
 proc addTimerFunctions*(ctx: JSContextRef) =
-  let globalObject = JSContextGetGlobalObject(ctx)
-  
-  let setTimeoutName = JSStringCreateWithUTF8CString("setTimeout")
-  let setTimeoutFunc = JSObjectMakeFunctionWithCallback(ctx, setTimeoutName, setTimeoutCallback)
-  JSObjectSetProperty(ctx, globalObject, setTimeoutName, cast[JSValueRef](setTimeoutFunc), kJSPropertyAttributeNone, nil)
-  JSStringRelease(setTimeoutName)
-
-  let clearTimeoutName = JSStringCreateWithUTF8CString("clearTimeout")
-  let clearTimeoutFunc = JSObjectMakeFunctionWithCallback(ctx, clearTimeoutName, clearTimerCallback)
-  JSObjectSetProperty(ctx, globalObject, clearTimeoutName, cast[JSValueRef](clearTimeoutFunc), kJSPropertyAttributeNone, nil)
-  JSStringRelease(clearTimeoutName)
-
-  let setIntervalName = JSStringCreateWithUTF8CString("setInterval")
-  let setIntervalFunc = JSObjectMakeFunctionWithCallback(ctx, setIntervalName, setIntervalCallback)
-  JSObjectSetProperty(ctx, globalObject, setIntervalName, cast[JSValueRef](setIntervalFunc), kJSPropertyAttributeNone, nil)
-  JSStringRelease(setIntervalName)
-
-  let clearIntervalName = JSStringCreateWithUTF8CString("clearInterval")
-  let clearIntervalFunc = JSObjectMakeFunctionWithCallback(ctx, clearIntervalName, clearTimerCallback)
-  JSObjectSetProperty(ctx, globalObject, clearIntervalName, cast[JSValueRef](clearIntervalFunc), kJSPropertyAttributeNone, nil)
-  JSStringRelease(clearIntervalName)
+  setupGlobalFunctions(ctx, @[
+    ("setTimeout", setTimeoutCallback),
+    ("clearTimeout", clearTimerCallback),
+    ("setInterval", setIntervalCallback),
+    ("clearInterval", clearTimerCallback)
+  ])
