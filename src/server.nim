@@ -19,8 +19,8 @@ proc handleRequest(req: Request): Future[void] =
       req.send(Http200, jsValueToNimStr(globalCtx, jsResult))
 
 proc serverCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl.} =
-  if argumentCount != 2:
-    echo "Error: server function expects 2 arguments (port and callback)"
+  if argumentCount != 2: 
+    setJSException(ctx, exception, "Error: server function expects 2 arguments (port and callback)")
     return JSValueMakeUndefined(ctx)
 
   globalCtx = ctx

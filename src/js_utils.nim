@@ -52,3 +52,10 @@ proc setupJSObjectFunctions*(ctx: JSContextRef, objName: string, functions: seq[
     let fn = JSObjectMakeFunctionWithCallback(ctx, funcName, callback)
     JSObjectSetProperty(ctx, obj, funcName, cast[JSValueRef](fn), kJSPropertyAttributeNone, nil)
     JSStringRelease(funcName)
+
+proc setJSException*(ctx: JSContextRef, exception: ptr JSValueRef, message: string) =
+  echo message
+  if exception != nil:
+    let jsString = JSStringCreateWithUTF8CString(message)
+    exception[] = JSValueMakeString(ctx, jsString)
+    JSStringRelease(jsString)

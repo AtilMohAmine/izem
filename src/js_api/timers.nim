@@ -37,6 +37,7 @@ proc startRepeatingTimer(id: TimerID, interval: int) =
 
 proc setTimeoutCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl.} =
   if argumentCount < 2:
+    setJSException(ctx, exception, "setTimeout requires a callback and delay arguments")
     return JSValueMakeNumber(ctx, 0)
   
   let callback = JSValueToObject(ctx, cast[ptr UncheckedArray[JSValueRef]](arguments)[0], nil)
@@ -50,7 +51,7 @@ proc setTimeoutCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JS
     discard JSObjectCallAsFunction(ctx, callback, NULL_JS_OBJECT, 0, nil, addr exceptionPtr)
     if exceptionPtr != NULL_JS_VALUE:
       # Handle exception
-      echo "Exception occurred in setTimeout callback"
+      setJSException(ctx, exception, "Exception occurred in setTimeout callback")
   , interval: delay, repeat: false)
 
   startTimer(timerID, delay)
@@ -59,6 +60,7 @@ proc setTimeoutCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JS
 
 proc setIntervalCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl.} =
   if argumentCount < 2:
+    setJSException(ctx, exception, "setInterval requires a callback and delay arguments")
     return JSValueMakeNumber(ctx, 0)
   
   let callback = JSValueToObject(ctx, cast[ptr UncheckedArray[JSValueRef]](arguments)[0], nil)
@@ -72,7 +74,7 @@ proc setIntervalCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: J
     discard JSObjectCallAsFunction(ctx, callback, NULL_JS_OBJECT, 0, nil, addr exceptionPtr)
     if exceptionPtr != NULL_JS_VALUE:
       # Handle exception
-      echo "Exception occurred in setInterval callback"
+      setJSException(ctx, exception, "Exception occurred in setInterval callback")
   , interval: interval, repeat: true)
 
   startRepeatingTimer(timerID, interval)
@@ -81,6 +83,7 @@ proc setIntervalCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: J
 
 proc clearTimerCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl.} =
   if argumentCount < 1:
+    setJSException(ctx, exception, "clearTimeout/clearInterval requires an ID argument")
     return JSValueMakeUndefined(ctx)
   
   let timerID = JSValueToNumber(ctx, cast[ptr UncheckedArray[JSValueRef]](arguments)[0], nil).int
