@@ -1,4 +1,4 @@
-import ../js_bindings, ../js_constants, ../js_utils
+import ../js_bindings, ../js_utils
 
 proc printJSValue(ctx: JSContextRef, value: JSValueRef) =
   if JSValueIsNull(ctx, value):
@@ -21,7 +21,7 @@ proc consoleLogCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JS
   for i in 0..<argumentCount:
     let arg = cast[ptr UncheckedArray[JSValueRef]](arguments)[i]
     printJSValue(ctx, arg)
-  return NULL_JS_VALUE
+  return JSValueMakeUndefined(ctx)
 
 proc createConsoleObject*(ctx: JSContextRef) =
   setupJSObjectFunctions(ctx, "console", @[
