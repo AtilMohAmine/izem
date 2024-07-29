@@ -15,7 +15,7 @@ proc transpileModule*(ctx: JSContextRef, code: string, filename: string): string
   let transformMethod = JSObjectGetProperty(ctx, babelTransform, JSStringCreateWithUTF8CString("transform"), nil)
   
   let options = %*{
-    "presets": ["env"],
+    "presets": ["env", "typescript"],
     "plugins": ["transform-modules-commonjs"],
     "filename": filename
   }
