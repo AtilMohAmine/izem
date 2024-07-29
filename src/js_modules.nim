@@ -1,6 +1,37 @@
-import tables, os, js_bindings, js_utils, js_constants
+import tables, os
+import js_bindings, js_utils, js_constants, babel_utils
 
 var modules = initTable[string, JSObjectRef]()
+
+proc loadModule(ctx: JSContextRef, modulePath: string, exception: ptr JSValueRef): JSObjectRef =
+  let fullPath = modulePath.absolutePath()
+  if not fileExists(fullPath):
+    setJSException(ctx, exception, "Module not found: " & modulePath)
+    return NULL_JS_OBJECT
+
+  let moduleCode = readFile(fullPath)
+  let transpiledCode = transpileModule(ctx, moduleCode, fullPath)
+
+  # Create a new object to serve as the module's exports
+  let exportsObj = JSObjectMake(ctx, nil, nil)
+  let moduleObj = JSObjectMake(ctx, nil, nil)
+  
+  JSObjectSetProperty(ctx, moduleObj, JSStringCreateWithUTF8CString("exports"), cast[JSValueRef](exportsObj), kJSPropertyAttributeNone, nil)
+
+  let globalObject = JSContextGetGlobalObject(ctx)
+  JSObjectSetProperty(ctx, globalObject, JSStringCreateWithUTF8CString("exports"), cast[JSValueRef](exportsObj), kJSPropertyAttributeNone, nil)
+  JSObjectSetProperty(ctx, globalObject, JSStringCreateWithUTF8CString("module"), cast[JSValueRef](moduleObj), kJSPropertyAttributeNone, nil)
+
+  var jsException: JSValueRef = NULL_JS_VALUE
+  discard JSEvaluateScript(ctx, JSStringCreateWithUTF8CString(transpiledCode.cstring), NULL_JS_VALUE, JSStringCreateWithUTF8CString(fullPath.cstring), 0, addr jsException)
+
+  if jsException != NULL_JS_VALUE:
+    let errorMsg = jsValueToNimStr(ctx, jsException)
+    setJSException(ctx, exception, "Error in module " & modulePath & ": " & errorMsg)
+    return NULL_JS_OBJECT
+
+  let moduleObjValue = JSObjectGetProperty(ctx, moduleObj, JSStringCreateWithUTF8CString("exports"), nil)
+  return JSValueToObject(ctx, moduleObjValue, nil)
 
 proc requireCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl.} =
   if argumentCount < 1:
@@ -12,45 +43,14 @@ proc requireCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObj
   if modules.hasKey(modulePath):
     return cast[JSValueRef](modules[modulePath])
 
-  let fullPath = modulePath.absolutePath()
-  if not fileExists(fullPath):
-    setJSException(ctx, exception, "Module not found: " & modulePath)
+  let moduleObj = loadModule(ctx, modulePath, exception)
+  if moduleObj == NULL_JS_OBJECT:
     return JSValueMakeUndefined(ctx)
 
-  let moduleCode = readFile(fullPath)
-  
-  # Create a new object to serve as the module's exports
-  let exportsObj = JSObjectMake(ctx, nil, nil)
-
-  # Wrap the module code in a function that takes 'exports' as an argument
-  let wrappedCode = "(function(exports) { " & moduleCode & "\nreturn exports; })"
-  
-  var jsException: JSValueRef = NULL_JS_VALUE
-  let jsScript = JSStringCreateWithUTF8CString(wrappedCode.cstring)
-  let moduleFunc = JSEvaluateScript(ctx, jsScript, NULL_JS_VALUE, NULL_JS_STRING, 0, addr jsException)
-  JSStringRelease(jsScript)
-
-  if jsException != NULL_JS_VALUE:
-    let errorMsg = jsValueToNimStr(ctx, jsException)
-    setJSException(ctx, exception, "Error in module " & modulePath & ": " & errorMsg)
-    return JSValueMakeUndefined(ctx)
-
-  # Call the module function with the exports object
-  let args = [cast[JSValueRef](exportsObj)]
-  let moduleResult = JSObjectCallAsFunction(ctx, JSValueToObject(ctx, moduleFunc, nil), NULL_JS_OBJECT, 1, addr args[0], addr jsException)
-
-  if jsException != NULL_JS_VALUE:
-    let errorMsg = jsValueToNimStr(ctx, jsException)
-    setJSException(ctx, exception, "Error executing module " & modulePath & ": " & errorMsg)
-    return JSValueMakeUndefined(ctx)
-
-  modules[modulePath] = JSValueToObject(ctx, moduleResult, nil)
-  return moduleResult
+  modules[modulePath] = moduleObj
+  return cast[JSValueRef](moduleObj)
 
 proc addModuleSystem*(ctx: JSContextRef) =
-  let globalObject = JSContextGetGlobalObject(ctx)
-  
-  let requireName = JSStringCreateWithUTF8CString("require")
-  let requireFunc = JSObjectMakeFunctionWithCallback(ctx, requireName, requireCallback)
-  JSObjectSetProperty(ctx, globalObject, requireName, cast[JSValueRef](requireFunc), kJSPropertyAttributeNone, nil)
-  JSStringRelease(requireName)
+  setupGlobalFunctions(ctx, @[
+    ("require", requireCallback)
+  ])

@@ -1,4 +1,25 @@
-import os, asyncdispatch, js_bindings, js_constants, server, js_api/console, js_api/timers, filesystem, js_modules
+import os, asyncdispatch
+import js_bindings, js_constants, js_utils, server, js_api/console, js_api/timers, filesystem, js_modules, babel_utils
+
+proc setupJSContext(ctx: JSContextRef, filename: string) =
+  loadBabel(ctx)
+  createConsoleObject(ctx)
+  createServerObject(ctx)
+  addTimerFunctions(ctx)
+  addFileSystemFunctions(ctx)
+  addModuleSystem(ctx)
+
+proc evaluateScript(ctx: JSContextRef, scriptContent: string, filename: string): bool =
+  let scriptString = JSStringCreateWithUTF8CString(scriptContent.cstring)
+  var exception: JSValueRef = NULL_JS_VALUE
+  discard JSEvaluateScript(ctx, scriptString, NULL_JS_VALUE, 
+                           JSStringCreateWithUTF8CString(filename), 0, addr exception)
+  JSStringRelease(scriptString)
+
+  if exception != NULL_JS_VALUE:
+    echo "Error executing script: ", jsValueToNimStr(ctx, exception)
+    return false
+  return true
 
 proc main() {.async.} =
   if paramCount() != 1:
@@ -14,24 +35,18 @@ proc main() {.async.} =
 
   let globalCtx = JSGlobalContextCreate(nil)
   if globalCtx.pointer != nil:
-    echo "JavaScript context created successfully!"
+    #echo "JavaScript context created successfully!"
 
-    createConsoleObject(cast[JSContextRef](globalCtx))
-    createServerObject(cast[JSContextRef](globalCtx))
-    addTimerFunctions(cast[JSContextRef](globalCtx))
-    addFileSystemFunctions(cast[JSContextRef](globalCtx))
-    addModuleSystem(cast[JSContextRef](globalCtx))
-    
-    let scriptString = JSStringCreateWithUTF8CString(scriptContent.cstring)
-    var exception: JSValueRef = NULL_JS_VALUE
-    discard JSEvaluateScript(JSContextRef(globalCtx), scriptString, NULL_JS_VALUE, NULL_JS_STRING, 0, addr exception)
-    
-    JSStringRelease(scriptString)
+    let ctx = cast[JSContextRef](globalCtx)
+    setupJSContext(ctx, filename)
 
-    while getTimersCount() > 0:
-      await sleepAsync(1000)
+    let transpiledCode = transpileModule(ctx, scriptContent, filename)
+    
+    if evaluateScript(ctx, transpiledCode, filename):
+      while getTimersCount() > 0:
+        await sleepAsync(100)
       
-    #JSGlobalContextRelease(ctx)
+    JSGlobalContextRelease(globalCtx)
   else:
     echo "Failed to create JavaScript context."
 

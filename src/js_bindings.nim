@@ -52,5 +52,6 @@ proc JSValueMakeNull*(ctx: JSContextRef): JSValueRef {.cdecl, importc.}
 proc JSObjectMakeArray*(ctx: JSContextRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSObjectRef {.cdecl, importc.}
 
 proc JSValueUnprotect*(ctx: JSContextRef, value: JSValueRef) {.cdecl.}
+proc JSObjectGetProperty*(ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef, exception: ptr JSValueRef): JSValueRef {.importc.}
 
 {.pop.}
