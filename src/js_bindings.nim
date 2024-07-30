@@ -13,6 +13,8 @@ type
     thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, 
     exception: ptr JSValueRef): JSValueRef {.cdecl.}
 
+  JSPropertyNameArrayRef* = distinct pointer
+
 proc `==`*(a, b: JSValueRef): bool {.borrow.}
 proc `==`*(a, b: JSStringRef): bool {.borrow.}
 proc `==`*(a, b: JSObjectRef): bool {.borrow.}
@@ -40,6 +42,8 @@ proc JSValueIsNull*(ctx: JSContextRef, value: JSValueRef): bool {.importc.}
 proc JSValueIsBoolean*(ctx: JSContextRef, value: JSValueRef): bool {.importc.}
 proc JSValueIsNumber*(ctx: JSContextRef, value: JSValueRef): bool {.importc.}
 proc JSObjectIsFunction*(ctx: JSContextRef, obj: JSObjectRef): bool {.importc.}
+proc JSValueIsObject*(ctx: JSContextRef, value: JSValueRef): bool {.importc.}
+proc JSValueIsArray*(ctx: JSContextRef, value: JSValueRef): bool {.importc.}
 
 proc JSValueToBoolean*(ctx: JSContextRef, value: JSValueRef): bool {.importc.}
 proc JSValueToNumber*(ctx: JSContextRef, value: JSValueRef, exception: ptr JSValueRef): cdouble {.importc.}
@@ -53,5 +57,11 @@ proc JSObjectMakeArray*(ctx: JSContextRef, argumentCount: csize_t, arguments: pt
 
 proc JSValueUnprotect*(ctx: JSContextRef, value: JSValueRef) {.cdecl.}
 proc JSObjectGetProperty*(ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef, exception: ptr JSValueRef): JSValueRef {.importc.}
+proc JSObjectMakeFunction*(ctx: JSContextRef, name: JSStringRef, paramCount: csize_t, paramNames: ptr JSStringRef, body: JSStringRef, sourceURL: JSStringRef, startingLineNumber: cint, exception: ptr JSValueRef): JSObjectRef {.importc.}
+proc JSObjectGetPropertyAtIndex*(ctx: JSContextRef, obj: JSObjectRef, index: cuint, exception: ptr JSValueRef): JSValueRef {.importc.}
+proc JSObjectCopyPropertyNames*(ctx: JSContextRef, obj: JSObjectRef): JSPropertyNameArrayRef {.importc, cdecl.}
+proc JSPropertyNameArrayGetCount*(array: JSPropertyNameArrayRef): csize_t {.importc, cdecl.}
+proc JSPropertyNameArrayGetNameAtIndex*(array: JSPropertyNameArrayRef, index: csize_t): JSStringRef {.importc, cdecl.}
+proc JSPropertyNameArrayRelease*(array: JSPropertyNameArrayRef) {.importc, cdecl.}
 
 {.pop.}
