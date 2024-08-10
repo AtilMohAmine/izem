@@ -18,18 +18,22 @@ proc jsValueToNimStr*(ctx: JSContextRef, value: JSValueRef): string =
   let stringRef = JSValueToStringCopy(ctx, value, addr exception)
 
   if exception != NULL_JS_VALUE:
-    result = ""
+    return ""
 
-  var buffer: array[1024, char]
-  let length = JSStringGetUTF8CString(stringRef, cast[cstring](buffer[0].addr), buffer.len.csize_t)
+  let length = JSStringGetLength(stringRef)
+  if length == 0:
+    JSStringRelease(stringRef)
+    return ""
 
-  if length > 0:
-    let resultStr = cast[string](buffer[0 .. length - 2])  # Convert buffer to string
-    result = resultStr
-  else:
-    result = ""
+  var buffer = newString(length.int * 4)
+  let actualLength = JSStringGetUTF8CString(stringRef, buffer.cstring, (length.int * 4 + 1).csize_t)
 
   JSStringRelease(stringRef)
+
+  if actualLength > 0:
+    result = buffer[0 ..< (actualLength - 1).int]  # Exclude null terminator
+  else:
+    result = ""
 
 # Function to convert Nim string to JSValueRef
 proc nimStrToJSObject*(ctx: JSContextRef, json: string): JSValueRef =
