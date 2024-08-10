@@ -14,7 +14,12 @@ all: compile
 # Compile the source code
 compile:
 	@mkdir -p $(OUTDIR)
-	$(NIM) c $(NIM_FLAGS) --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" --outdir:$(OUTDIR) $(SRC)
+	$(NIM) c  $(NIM_FLAGS) --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" -d:debug  --outdir:$(OUTDIR) $(SRC)
+
+# Compile the source code for debugging
+debug:
+	@mkdir -p $(OUTDIR)
+	$(NIM) c -d:debug --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" --outdir:$(OUTDIR) $(SRC)
 
 # Phony targets
-.PHONY: all compile
+.PHONY: all compile debug
