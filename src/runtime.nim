@@ -1,13 +1,14 @@
 import os, asyncdispatch
-import js_bindings, js_constants, js_utils, server, js_api/console, js_api/timers, filesystem, js_modules, babel_utils
+import js_bindings, js_constants, js_utils, server, filesystem, js_modules, babel_utils
+import js_api/console, js_api/timers, js_api/url_search_params
 
 proc setupJSContext(ctx: JSContextRef, filename: string) =
-  loadBabel(ctx)
   createConsoleObject(ctx)
   createServerObject(ctx)
   addTimerFunctions(ctx)
   addFileSystemFunctions(ctx)
   addModuleSystem(ctx)
+  createURLSearchParamsClass(ctx)
 
 proc evaluateScript(ctx: JSContextRef, scriptContent: string, filename: string): bool =
   let scriptString = JSStringCreateWithUTF8CString(scriptContent.cstring)
@@ -38,9 +39,11 @@ proc main() {.async.} =
     #echo "JavaScript context created successfully!"
 
     let ctx = cast[JSContextRef](globalCtx)
-    setupJSContext(ctx, filename)
-
+    
+    loadBabel(ctx)
     let transpiledCode = transpileModule(ctx, scriptContent, filename)
+
+    setupJSContext(ctx, filename)
     
     if evaluateScript(ctx, transpiledCode, filename):
       while getTimersCount() > 0:

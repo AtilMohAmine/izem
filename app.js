@@ -1,3 +1,6 @@
+let params = new URLSearchParams({key: "730d67"})
+console.log(params.getAll())
+
 a = 5
 a = a * 2
 console.log("Hello World "+a)
@@ -17,10 +20,9 @@ t = setTimeout(function() {
   clearInterval(interval)
   console.log("delete interval")
 }, 2000)//=================
-/*
 
 
 
-/*myruntime.server(4007, function(req) {
+myruntime.server(4008, function(req) {
     return "Hello from js "+req.method;
-  });*/
+  });
