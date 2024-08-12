@@ -3,8 +3,8 @@ import js_bindings, js_constants
 proc jsStringToNimStr*(jsString: JSStringRef): string =
   let length = JSStringGetMaximumUTF8CStringSize(jsString)
   var buffer = newString(length)
-  discard JSStringGetUTF8CString(jsString, buffer.cstring, length)
-  result = buffer
+  let actualLength = JSStringGetUTF8CString(jsString, buffer.cstring, length)
+  result = buffer[0 ..< actualLength - 1]
 
 # Function to convert Nim string to JSValueRef
 proc nimStrToJSValue*(ctx: JSContextRef, s: string): JSValueRef =
