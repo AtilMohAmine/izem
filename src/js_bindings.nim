@@ -115,5 +115,6 @@ proc JSObjectSetPrototype*(ctx: JSContextRef, obj: JSObjectRef, value: JSValueRe
 proc JSObjectGetPrototype*(ctx: JSContextRef, obj: JSObjectRef): JSObjectRef {.importc, cdecl.}
 proc JSStringGetLength*(string: JSStringRef): csize_t {.importc.}
 proc JSValueCreateJSONString*(ctx: JSContextRef, value: JSValueRef, indent: cuint, exception: ptr JSValueRef): JSStringRef {.importc, cdecl.}
+proc JSObjectCallAsConstructor*(ctx: JSContextRef, obj: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSObjectRef {.importc.}
 
 {.pop.}

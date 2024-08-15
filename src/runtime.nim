@@ -1,6 +1,6 @@
 import os, asyncdispatch
 import js_bindings, js_constants, js_utils, server, filesystem, js_modules, babel_utils
-import js_api/console, js_api/timers, js_api/url_search_params
+import js_api/console, js_api/timers, js_api/url_search_params, js_api/url
 
 proc setupJSContext(ctx: JSContextRef, filename: string) =
   createConsoleObject(ctx)
@@ -9,6 +9,7 @@ proc setupJSContext(ctx: JSContextRef, filename: string) =
   addFileSystemFunctions(ctx)
   addModuleSystem(ctx)
   createURLSearchParamsClass(ctx)
+  createURLClass(ctx)
 
 proc evaluateScript(ctx: JSContextRef, scriptContent: string, filename: string): bool =
   let scriptString = JSStringCreateWithUTF8CString(scriptContent.cstring)
