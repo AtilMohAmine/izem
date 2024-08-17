@@ -33,6 +33,6 @@ proc serverCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObje
   JSValueMakeUndefined(ctx)
 
 proc createServerObject*(ctx: JSContextRef) =
-  setupJSObjectFunctions(ctx, "myruntime", @[
+  setupJSObjectFunctions(ctx, "izem", @[
     ("server", serverCallback)
   ])
