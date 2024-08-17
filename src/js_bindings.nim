@@ -1,8 +1,5 @@
 {.push header: "<JavaScriptCore/JavaScript.h>".}
 
-const
-  kJSClassAttributeHasPrivateData* = 1 shl 0
-
 type
   JSContextRef* = distinct pointer
   JSValueRef* = distinct pointer
@@ -15,30 +12,46 @@ type
    kJSPropertyAttributeReadOnly = 1 shl 1
    kJSPropertyAttributeDontEnum = 1 shl 2
    kJSPropertyAttributeDontDelete = 1 shl 3
+  JSClassAttributes* = enum
+   kJSClassAttributeNone = 0
+   kJSClassAttributeNoAutomaticPrototype = 2
 
   JSObjectCallAsFunctionCallback* = proc (ctx: JSContextRef, function: JSObjectRef, 
     thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, 
     exception: ptr JSValueRef): JSValueRef {.cdecl.}
 
   JSPropertyNameArrayRef* = distinct pointer
+  JSPropertyNameAccumulatorRef* = distinct pointer
+
   JSObjectInitializeCallback* = proc (ctx: JSContextRef, obj: JSObjectRef) {.cdecl.}
   JSObjectFinalizeCallback* = proc (obj: JSObjectRef) {.cdecl.}
   JSObjectHasPropertyCallback* = proc (ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef): bool {.cdecl.}
   JSObjectGetPropertyCallback* = proc (ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef, exception: ptr JSValueRef): JSValueRef {.cdecl.}
   JSObjectSetPropertyCallback* = proc (ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef, value: JSValueRef, exception: ptr JSValueRef): bool {.cdecl.}
   JSObjectDeletePropertyCallback* = proc (ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef, exception: ptr JSValueRef): bool {.cdecl.}
-  JSObjectGetPropertyNamesCallback* = proc (ctx: JSContextRef, obj: JSObjectRef, propertyNames: JSPropertyNameArrayRef) {.cdecl.}
+  JSObjectGetPropertyNamesCallback* = proc (ctx: JSContextRef, obj: JSObjectRef, propertyNames: JSPropertyNameAccumulatorRef) {.cdecl.}
   JSObjectCallAsConstructorCallback* = proc (ctx: JSContextRef, constructor: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSObjectRef {.cdecl.}
   JSObjectHasInstanceCallback* = proc (ctx: JSContextRef, constructor: JSObjectRef, possibleInstance: JSValueRef, exception: ptr JSValueRef): bool {.cdecl.}
   JSObjectConvertToTypeCallback* = proc (ctx: JSContextRef, obj: JSObjectRef, toType: cint, exception: ptr JSValueRef): JSValueRef {.cdecl.}
 
+  JSStaticValue* = object
+    name*: cstring
+    getProperty*: JSObjectGetPropertyCallback
+    setProperty*: JSObjectSetPropertyCallback
+    attributes*: JSPropertyAttributes
+
+  JSStaticFunction* = object
+    name*: cstring
+    callAsFunction*: JSObjectCallAsFunctionCallback
+    attributes*: JSPropertyAttributes
+    
   JSClassDefinition* = object
     version*: cint
-    attributes*: cint
+    attributes*: JSClassAttributes
     className*: cstring
     parentClass*: pointer
-    staticValues*: pointer
-    staticFunctions*: pointer
+    staticValues*: ptr JSStaticValue
+    staticFunctions*: ptr JSStaticFunction
     initialize*: JSObjectInitializeCallback
     finalize*: JSObjectFinalizeCallback
     hasProperty*: JSObjectHasPropertyCallback
@@ -50,12 +63,6 @@ type
     callAsConstructor*: JSObjectCallAsConstructorCallback
     hasInstance*: JSObjectHasInstanceCallback
     convertToType*: JSObjectConvertToTypeCallback
-
-  JSStaticValue* = object
-    name*: cstring
-    getProperty*: JSObjectGetPropertyCallback
-    setProperty*: JSObjectSetPropertyCallback
-    attributes*: JSPropertyAttributes
 
 proc `==`*(a, b: JSValueRef): bool {.borrow.}
 proc `==`*(a, b: JSStringRef): bool {.borrow.}
@@ -72,7 +79,7 @@ proc JSStringGetUTF8CString*(string: JSStringRef, buffer: cstring, bufferSize: c
 proc JSValueMakeUndefined*(ctx: JSContextRef): JSValueRef {.importc.}
 proc JSValueMakeString*(ctx: JSContextRef, string: JSStringRef): JSValueRef {.cdecl, importc.}
 proc JSContextGetGlobalObject*(ctx: JSContextRef): JSObjectRef {.importc.}
-proc JSObjectMake*(ctx: JSContextRef, jsClass: pointer, data: pointer): JSObjectRef {.importc, cdecl.}
+proc JSObjectMake*(ctx: JSContextRef, jsClass: JSClassRef, data: pointer): JSObjectRef {.importc, cdecl.}
 proc JSObjectMakeFunctionWithCallback*(ctx: JSContextRef, name: JSStringRef, callAsFunction: proc (ctx: JSContextRef, function: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl.}): JSObjectRef {.importc, cdecl.}
 proc JSObjectSetProperty*(ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef, value: JSValueRef, attributes: JSPropertyAttributes, exception: ptr JSValueRef) {.importc.}
 proc JSObjectCallAsFunction*(ctx: JSContextRef, obj: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl, importc.}
@@ -112,9 +119,12 @@ proc JSObjectGetPrivate*(obj: JSObjectRef): pointer {.importc, cdecl.}
 proc JSClassCreate*(definition: ptr JSClassDefinition): JSClassRef {.importc, cdecl.}
 proc JSObjectMakeConstructor*(ctx: JSContextRef, jsClass: JSClassRef, callAsConstructor: JSObjectCallAsConstructorCallback): JSObjectRef {.importc, cdecl.}
 proc JSObjectSetPrototype*(ctx: JSContextRef, obj: JSObjectRef, value: JSValueRef) {.importc, cdecl.}
-proc JSObjectGetPrototype*(ctx: JSContextRef, obj: JSObjectRef): JSObjectRef {.importc, cdecl.}
+proc JSObjectGetPrototype*(ctx: JSContextRef, obj: JSObjectRef): JSValueRef {.importc, cdecl.}
 proc JSStringGetLength*(string: JSStringRef): csize_t {.importc.}
 proc JSValueCreateJSONString*(ctx: JSContextRef, value: JSValueRef, indent: cuint, exception: ptr JSValueRef): JSStringRef {.importc, cdecl.}
 proc JSObjectCallAsConstructor*(ctx: JSContextRef, obj: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSObjectRef {.importc.}
+proc JSObjectHasProperty*(ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef): bool {.importc, cdecl.}
+proc JSValueProtect*(ctx: JSContextRef, value: JSValueRef) {.importc, cdecl.}
+proc JSPropertyNameAccumulatorAddName*(accumulator: JSPropertyNameAccumulatorRef, propertyName: JSStringRef) {.importc, cdecl.}
 
 {.pop.}

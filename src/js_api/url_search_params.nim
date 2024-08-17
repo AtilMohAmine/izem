@@ -32,7 +32,7 @@ proc urlSearchParamsConstructor(ctx: JSContextRef, constructor: JSObjectRef, arg
           elif value.kind == JArray:
             usp.params[key] = value.elems.mapIt(it.getStr())
 
-  let result = JSObjectMake(ctx, cast[pointer](classRef), nil)
+  let result = JSObjectMake(ctx, classRef, nil)
   
   if result == NULL_JS_OBJECT:
     echo "Failed to create JSObject"
@@ -146,19 +146,33 @@ proc urlSearchParamsGetProperty(ctx: JSContextRef, obj: JSObjectRef, propertyNam
       return JSValueMakeNumber(ctx, 0.cdouble)
     result = JSValueMakeNumber(ctx, usp.params.len.cdouble)
 
+  of "append": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlSearchParamsAppend))
+  of "delete": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlSearchParamsDelete))
+  of "get": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlSearchParamsGet))
+  of "getAll": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlSearchParamsGetAll))
+  of "has": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlSearchParamsHas))
+  of "set": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlSearchParamsSet))
+  of "sort": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlSearchParamsSort))
+  of "toString": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlSearchParamsToString))
+
+proc urlGetPropertyNames(ctx: JSContextRef, obj: JSObjectRef, propertyNames: JSPropertyNameAccumulatorRef) {.cdecl.} =
+  let properties = ["size", "append", "delete", "get", "getAll", "has", "set", "sort", "toString"]
+  for prop in properties:
+    JSPropertyNameAccumulatorAddName(propertyNames, JSStringCreateWithUTF8CString(prop.cstring))
+
 proc createURLSearchParamsClass*(ctx: JSContextRef) =
   var classdef = JSClassDefinition(
         version: 0,
-        attributes: kJSClassAttributeHasPrivateData,
+        attributes: kJSClassAttributeNone,
         className: "URLSearchParams",
         finalize: finalizeURLSearchParams,
         hasProperty: nil,
         getProperty: urlSearchParamsGetProperty,
         setProperty: nil,
         deleteProperty: nil,
-        getPropertyNames: nil,
+        getPropertyNames: urlGetPropertyNames,
         callAsFunction: nil,
-        callAsConstructor: nil,
+        callAsConstructor: urlSearchParamsConstructor,
         hasInstance: nil,
         convertToType: nil
     )
@@ -167,25 +181,6 @@ proc createURLSearchParamsClass*(ctx: JSContextRef) =
   
   let constructor = JSObjectMakeConstructor(ctx, classRef, urlSearchParamsConstructor)
   setPrivateData(constructor, cast[pointer](classRef))
-
-  let prototype = JSObjectGetPrototype(ctx, constructor)
-  
-  let methods: Table[string, JSObjectCallAsFunctionCallback] = {
-    "append": urlSearchParamsAppend,
-    "delete": urlSearchParamsDelete,
-    "get": urlSearchParamsGet,
-    "getAll": urlSearchParamsGetAll,
-    "has": urlSearchParamsHas,
-    "set": urlSearchParamsSet,
-    "sort": urlSearchParamsSort,
-    "toString": urlSearchParamsToString
-  }.toTable
-
-  for name, fn in methods.pairs:
-    let nameStr = JSStringCreateWithUTF8CString(name.cstring)
-    let fnObj = JSObjectMakeFunctionWithCallback(ctx, nameStr, fn)
-    JSObjectSetProperty(ctx, prototype, JSStringCreateWithUTF8CString(name.cstring), cast[JSValueRef](fnObj), kJSPropertyAttributeDontDelete, nil)
-    JSStringRelease(nameStr)
 
   let globalObject = JSContextGetGlobalObject(ctx)
   JSObjectSetProperty(ctx, globalObject, JSStringCreateWithUTF8CString("URLSearchParams"), cast[JSValueRef](constructor), kJSPropertyAttributeNone, nil)

@@ -49,7 +49,7 @@ proc urlConstructor(ctx: JSContextRef, constructor: JSObjectRef, argumentCount: 
     let searchParamsArgs = [JSValueMakeString(ctx, JSStringCreateWithUTF8CString(url.uri.query))]
     url.searchParams = JSObjectCallAsConstructor(ctx, cast[JSObjectRef](searchParamsConstructor), 1, addr searchParamsArgs[0], nil)
 
-  let result = JSObjectMake(ctx, cast[pointer](urlClassRef), nil)
+  let result = JSObjectMake(ctx, urlClassRef, nil)
   if result == NULL_JS_OBJECT:
     echo "Failed to create JSObject"
   else:
@@ -111,14 +111,28 @@ proc urlGetProperty(ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringR
   of "searchParams": result = cast[JSValueRef](url.searchParams)
   of "hash": result = nimStrToJSValue(ctx, if url.uri.anchor.len > 0: "#" & url.uri.anchor else: "")
 
+  of "toJSON": result = cast[JSValueRef](JSObjectMakeFunctionWithCallback(ctx, propertyName, urlToJSON))
+
+proc urlGetPropertyNames(ctx: JSContextRef, obj: JSObjectRef, propertyNames: JSPropertyNameAccumulatorRef) {.cdecl.} =
+  let properties = ["href", "origin", "protocol", "username", "password", "host", "hostname", "port", "pathname", "search", "searchParams", "hash", "toJSON"]
+  for prop in properties:
+    JSPropertyNameAccumulatorAddName(propertyNames, JSStringCreateWithUTF8CString(prop.cstring))
+
+var staticFunctions = [
+    JSStaticFunction(name: "parse", callAsFunction: urlParse, attributes: kJSPropertyAttributeDontDelete),
+    JSStaticFunction(name: "canParse", callAsFunction: urlCanParse, attributes: kJSPropertyAttributeDontDelete),
+    JSStaticFunction(name: nil, callAsFunction: nil, attributes: kJSPropertyAttributeNone)
+  ]
+
 proc createURLClass*(ctx: JSContextRef) =
-  var classdef = JSClassDefinition(
+
+  let classdef = JSClassDefinition(
     version: 0,
-    attributes: kJSClassAttributeHasPrivateData,
+    attributes: kJSClassAttributeNone,
     className: "URL",
     parentClass: nil,
     staticValues: nil,
-    staticFunctions: nil,
+    staticFunctions: addr staticFunctions[0],
     initialize: nil,
     finalize: proc (obj: JSObjectRef) {.cdecl.} =
       let url = cast[URL](getPrivateData(obj))
@@ -129,9 +143,9 @@ proc createURLClass*(ctx: JSContextRef) =
     getProperty: urlGetProperty,
     setProperty: nil,
     deleteProperty: nil,
-    getPropertyNames: nil,
+    getPropertyNames: urlGetPropertyNames,
     callAsFunction: nil,
-    callAsConstructor: nil,
+    callAsConstructor: urlConstructor,
     hasInstance: nil,
     convertToType: nil
   )
@@ -140,20 +154,6 @@ proc createURLClass*(ctx: JSContextRef) =
   
   let constructor = JSObjectMakeConstructor(ctx, urlClassRef, urlConstructor)
   setPrivateData(constructor, cast[pointer](urlClassRef))
-
-  let prototype = JSObjectGetPrototype(ctx, constructor)
-  
-  let methods: Table[string, JSObjectCallAsFunctionCallback] = {
-    "toJSON": urlToJSON,
-    "parse": urlParse,
-    "canParse": urlCanParse,
-  }.toTable
-
-  for name, fn in methods.pairs:
-    let nameStr = JSStringCreateWithUTF8CString(name.cstring)
-    let fnObj = JSObjectMakeFunctionWithCallback(ctx, nameStr, fn)
-    JSObjectSetProperty(ctx, prototype, JSStringCreateWithUTF8CString(name.cstring), cast[JSValueRef](fnObj), kJSPropertyAttributeDontDelete, nil)
-    JSStringRelease(nameStr)
 
   let globalObject = JSContextGetGlobalObject(ctx)
   JSObjectSetProperty(ctx, globalObject, JSStringCreateWithUTF8CString("URL"), cast[JSValueRef](constructor), kJSPropertyAttributeNone, nil)

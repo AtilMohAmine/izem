@@ -13,8 +13,8 @@ proc loadModule(ctx: JSContextRef, modulePath: string, exception: ptr JSValueRef
   let transpiledCode = transpileModule(ctx, moduleCode, fullPath)
 
   # Create a new object to serve as the module's exports
-  let exportsObj = JSObjectMake(ctx, nil, nil)
-  let moduleObj = JSObjectMake(ctx, nil, nil)
+  let exportsObj = JSObjectMake(ctx, NULL_JS_CLASS, nil)
+  let moduleObj = JSObjectMake(ctx, NULL_JS_CLASS, nil)
   
   JSObjectSetProperty(ctx, moduleObj, JSStringCreateWithUTF8CString("exports"), cast[JSValueRef](exportsObj), kJSPropertyAttributeNone, nil)
 

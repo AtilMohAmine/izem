@@ -53,7 +53,7 @@ proc setupGlobalFunctions*(ctx: JSContextRef; functions: seq[(string, JSObjectCa
 proc setupJSObjectFunctions*(ctx: JSContextRef, objName: string, functions: seq[(string, JSObjectCallAsFunctionCallback)]) =
   let globalObject = JSContextGetGlobalObject(ctx)
   let objNameStr = JSStringCreateWithUTF8CString(objName)
-  let obj = JSObjectMake(ctx, nil, nil)
+  let obj = JSObjectMake(ctx, NULL_JS_CLASS, nil)
   JSObjectSetProperty(ctx, globalObject, objNameStr, cast[JSValueRef](obj), kJSPropertyAttributeNone, nil)
   JSStringRelease(objNameStr)
 
