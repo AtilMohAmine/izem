@@ -18,6 +18,11 @@ proc handleRequest(req: Request): Future[void] =
     else:
       req.send(Http200, jsValueToNimStr(globalCtx, jsResult))
 
+proc startServer(port: int): Future[void] {.async.} =
+  await sleepAsync(0)
+  let settings = initSettings(port = Port(port))
+  run(handleRequest, settings)
+
 proc serverCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl.} =
   if argumentCount != 2: 
     setJSException(ctx, exception, "Error: server function expects 2 arguments (port and callback)")
@@ -27,9 +32,7 @@ proc serverCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObje
   let port = JSValueToNumber(globalCtx, cast[ptr UncheckedArray[JSValueRef]](arguments)[0], nil).int
   jsCallback = JSValueToObject(globalCtx, cast[ptr UncheckedArray[JSValueRef]](arguments)[1], nil)
       
-  let settings = initSettings(port = Port(port))
-  run(handleRequest, settings)
-
+  asyncCheck startServer(port)
   JSValueMakeUndefined(ctx)
 
 proc createServerObject*(ctx: JSContextRef) =
