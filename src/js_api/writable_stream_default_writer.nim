@@ -1,5 +1,5 @@
-import tables, sequtils, algorithm, strutils, json, asyncdispatch
-import ../js_bindings, ../js_utils, ../js_constants, ../js_private_data, writable_stream
+import tables, sequtils, algorithm, strutils, asyncdispatch
+import ../js_bindings, ../js_utils, ../js_constants, ../js_private_data, writable_stream, ../event_loop, ../async_task_manager
 
 var writableStreamDefaultWriterClassRef: JSClassRef
 
@@ -11,7 +11,7 @@ proc writableStreamDefaultWriterConstructor(ctx: JSContextRef, constructor: JSOb
   let streamObj = JSValueToObject(ctx, cast[ptr UncheckedArray[JSValueRef]](arguments)[0], exception)
   if streamObj == NULL_JS_OBJECT:
     return NULL_JS_OBJECT
-
+  
   var writer = new(WritableStreamDefaultWriter)
   GC_ref(writer)
   writer.stream = streamObj
@@ -119,8 +119,8 @@ proc writableStreamDefaultWriterGetDesiredSize(ctx: JSContextRef, writer: Writab
 
     let desiredSize = highWaterMark - totalSize
     return desiredSize
-
-proc processNextWrite(ctx: JSContextRef, stream: WritableStream, exception: ptr JSValueRef) {.async.} =
+  
+proc processNextWrite(ctx: JSContextRef, stream: WritableStream, exception: ptr JSValueRef): Future[void] {.async.} =
   
   if stream.writeRequests.len > 0 and stream.inFlightWriteRequest == NULL_JS_OBJECT:
     # Check the desired size and apply backpressure if necessary
@@ -139,14 +139,13 @@ proc processNextWrite(ctx: JSContextRef, stream: WritableStream, exception: ptr 
     
     stream.inFlightWriteRequest = NULL_JS_OBJECT
     let resolveFunc = JSObjectGetProperty(ctx, nextWrite, JSStringCreateWithUTF8CString("resolve"), exception)
-    discard JSObjectCallAsFunction(ctx, cast[JSObjectRef](resolveFunc), NULL_JS_OBJECT, 0, nil, exception)
-    
+    discard callJSFunctionAsync(ctx, cast[JSObjectRef](resolveFunc), NULL_JS_OBJECT, @[], exception)
     # Check the desired size and update backpressure
     desiredSize = writableStreamDefaultWriterGetDesiredSize(ctx, writer, exception)
     if desiredSize > 0 and stream.backpressure:
       stream.backpressure = false
-      discard JSObjectCallAsFunction(ctx, cast[JSObjectRef](writer.readyResolve), NULL_JS_OBJECT, 0, nil, exception)
-    
+      discard callJSFunctionAsync(ctx, cast[JSObjectRef](writer.readyResolve), NULL_JS_OBJECT, @[], exception)
+
     if not stream.backpressure and stream.pendingRequests.len > 0:
       stream.writeRequests.add(stream.pendingRequests[0])
       stream.pendingRequests.delete(0)
@@ -157,15 +156,14 @@ proc processNextWrite(ctx: JSContextRef, stream: WritableStream, exception: ptr 
       stream.state = "closed"
       
       # Resolve the stored close promise
-      discard JSObjectCallAsFunction(ctx, stream.inFlightCloseRequestResolve, NULL_JS_OBJECT, 0, nil, exception)
+      discard callJSFunctionAsync(ctx, stream.inFlightCloseRequestResolve, NULL_JS_OBJECT, @[], exception)
 
-      discard JSObjectCallAsFunction(ctx, writer.closedResolve, NULL_JS_OBJECT, 0, nil, exception)
-
+      discard callJSFunctionAsync(ctx, writer.closedResolve, NULL_JS_OBJECT, @[], exception)
       # Clear the close request
       stream.inFlightCloseRequest = NULL_JS_OBJECT
 
-    discard processNextWrite(ctx, stream, exception)
-  
+    asyncCheckTracked processNextWrite(ctx, stream, exception)
+
 proc writableStreamDefaultWriterWrite(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObjectRef, argumentCount: csize_t, arguments: ptr JSValueRef, exception: ptr JSValueRef): JSValueRef {.cdecl.} =
   let writer = cast[WritableStreamDefaultWriter](getPrivateData(thisObject))
   if writer.isNil:
@@ -226,7 +224,7 @@ proc writableStreamDefaultWriterWrite(ctx: JSContextRef, function: JSObjectRef, 
     let desiredSize = writableStreamDefaultWriterGetDesiredSize(ctx, writer, exception)
     stream.backpressure = desiredSize <= 0
 
-    asyncCheck processNextWrite(ctx, stream, exception)
+    asyncCheckTracked processNextWrite(ctx, stream, exception)
 
   else:
     stream.pendingRequests.add(writeRequest)
