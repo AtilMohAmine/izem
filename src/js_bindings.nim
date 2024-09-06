@@ -67,6 +67,7 @@ type
 proc `==`*(a, b: JSValueRef): bool {.borrow.}
 proc `==`*(a, b: JSStringRef): bool {.borrow.}
 proc `==`*(a, b: JSObjectRef): bool {.borrow.}
+proc `==`*(a, b: JSContextRef): bool {.borrow.}
 
 proc JSGlobalContextCreate*(globalObject: pointer): JSGlobalContextRef {.importc.}
 proc JSGlobalContextRelease*(ctx: JSGlobalContextRef) {.importc.}
@@ -126,5 +127,6 @@ proc JSObjectCallAsConstructor*(ctx: JSContextRef, obj: JSObjectRef, argumentCou
 proc JSObjectHasProperty*(ctx: JSContextRef, obj: JSObjectRef, propertyName: JSStringRef): bool {.importc, cdecl.}
 proc JSValueProtect*(ctx: JSContextRef, value: JSValueRef) {.importc, cdecl.}
 proc JSPropertyNameAccumulatorAddName*(accumulator: JSPropertyNameAccumulatorRef, propertyName: JSStringRef) {.importc, cdecl.}
+proc JSObjectMakeDeferredPromise*(ctx: JSContextRef, resolve: ptr JSObjectRef, reject: ptr JSObjectRef, exception: ptr JSValueRef): JSObjectRef {.importc, cdecl.}
 
 {.pop.}
