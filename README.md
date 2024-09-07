@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">Izem</h1>
 
-**Izem** is a **blazing fast** runtime built with Nim 2 and JavaScriptCore. It is designed for exceptional performance and efficiency.
+**Izem** is a **blazing fast** javascript/typescript runtime built with Nim 2 and JavaScriptCore. It is designed for exceptional performance and efficiency.
 
 ## Getting Started
 
