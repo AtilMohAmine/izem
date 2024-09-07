@@ -1,6 +1,6 @@
 import os, asyncdispatch
-import js_bindings, js_constants, js_utils, server, filesystem, js_modules, babel_utils
-import js_api/console, js_api/timers, js_api/url_search_params, js_api/url
+import js_bindings, js_constants, js_utils, server, filesystem, js_modules, event_loop, babel_utils
+import js_api/console, js_api/timers, js_api/url_search_params, js_api/url, js_api/writable_stream, js_api/writable_stream_default_writer
 
 proc setupJSContext(ctx: JSContextRef, filename: string) =
   createConsoleObject(ctx)
@@ -10,6 +10,8 @@ proc setupJSContext(ctx: JSContextRef, filename: string) =
   addModuleSystem(ctx)
   createURLSearchParamsClass(ctx)
   createURLClass(ctx)
+  createWritableStreamClass(ctx)
+  createWritableStreamDefaultWriterClass(ctx)
 
 proc evaluateScript(ctx: JSContextRef, scriptContent: string, filename: string): bool =
   let scriptString = JSStringCreateWithUTF8CString(scriptContent.cstring)
@@ -45,10 +47,10 @@ proc main() {.async.} =
     let transpiledCode = transpileModule(ctx, scriptContent, filename)
 
     setupJSContext(ctx, filename)
-    
+    initEventLoop()
+
     if evaluateScript(ctx, transpiledCode, filename):
-      while getTimersCount() > 0:
-        await sleepAsync(100)
+      await startEventLoop()
       
     JSGlobalContextRelease(globalCtx)
   else:
