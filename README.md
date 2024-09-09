@@ -1,9 +1,9 @@
 <p align="center">
-   <img src="https://github.com/user-attachments/assets/d36b27aa-29a1-466b-9571-1471cabff1fd" style="width: 270px">
+   <img src="https://github.com/user-attachments/assets/b6de3739-baf3-4b27-a30a-26eb0def4169" style="width: 215px">
 </p>
 <h1 align="center">Izem</h1>
 
-**Izem** is a **blazing fast** javascript/typescript runtime built with Nim 2 and JavaScriptCore. It is designed for exceptional performance and efficiency, capable of handling up to **100,000 requests per second**.
+**Izem** is a **blazing fast** JavaScript and TypeScript runtime built with Nim 2 and JavaScriptCore. It is designed for exceptional performance and efficiency, capable of handling up to **100,000 requests per second**.
 
 ## Getting Started
 
