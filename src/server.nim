@@ -37,5 +37,5 @@ proc serverCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObje
 
 proc createServerObject*(ctx: JSContextRef) =
   setupJSObjectFunctions(ctx, "izem", @[
-    ("server", serverCallback)
+    ("serve", serverCallback)
   ])
