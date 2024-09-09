@@ -1,4 +1,4 @@
-import asyncdispatch, httpbeast, httpcore, options, js_utils, js_constants, js_bindings
+import asyncdispatch, httpbeast, httpcore, options, js_utils, js_constants, js_bindings, async_task_manager
 
 var globalCtx: JSContextRef
 var jsCallback: JSObjectRef
@@ -32,7 +32,7 @@ proc serverCallback(ctx: JSContextRef, function: JSObjectRef, thisObject: JSObje
   let port = JSValueToNumber(globalCtx, cast[ptr UncheckedArray[JSValueRef]](arguments)[0], nil).int
   jsCallback = JSValueToObject(globalCtx, cast[ptr UncheckedArray[JSValueRef]](arguments)[1], nil)
       
-  asyncCheck startServer(port)
+  asyncCheckTracked startServer(port)
   JSValueMakeUndefined(ctx)
 
 proc createServerObject*(ctx: JSContextRef) =
