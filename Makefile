@@ -14,7 +14,7 @@ all: compile
 # Compile the source code
 compile:
 	@mkdir -p $(OUTDIR)
-	$(NIM) c  $(NIM_FLAGS) --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" -d:debug  --outdir:$(OUTDIR) --out:izem $(SRC)
+	$(NIM) c  $(NIM_FLAGS) --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" --outdir:$(OUTDIR) --out:izem $(SRC)
 
 # Compile the source code for debugging
 debug:
