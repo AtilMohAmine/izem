@@ -5,6 +5,10 @@
 
 **Izem** is a **blazing fast** JavaScript and TypeScript runtime built with Nim 2 and JavaScriptCore. It is designed for exceptional performance and efficiency, capable of handling up to **100,000 requests per second**.
 
+<p align="center">
+   <img src="https://github.com/user-attachments/assets/202f3368-b516-4eaa-b00a-d80f6f35bc2b" style="width: 500px">
+</p>
+
 ## Getting Started
 
 ### Installation:
