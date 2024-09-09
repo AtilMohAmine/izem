@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">Izem</h1>
 
-**Izem** is a **blazing fast** javascript/typescript runtime built with Nim 2 and JavaScriptCore. It is designed for exceptional performance and efficiency.
+**Izem** is a **blazing fast** javascript/typescript runtime built with Nim 2 and JavaScriptCore. It is designed for exceptional performance and efficiency, capable of handling up to **100,000 requests per second**.
 
 ## Getting Started
 
@@ -23,4 +23,14 @@ Once built, you can run JavaScript files using:
 
 ```bash
 ./izem yourfile.js
+```
+
+## Starting a Server
+
+You can start a simple server using the `izem.serve` method. Below is an example of how to initialize the server:
+
+```js
+izem.serve(4006, (req) => {
+    return "Welcome to the Izem Server";
+});
 ```
