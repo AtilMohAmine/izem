@@ -47,3 +47,19 @@ izem.serve(4006, (req) => {
     return "Welcome to the Izem Server";
 });
 ```
+
+## WinterCG Compliance and Available APIs
+
+**Izem** is designed to adhere to the [WinterCG](https://wintercg.org/) standards, ensuring compatibility with modern web platform capabilities and a consistent developer experience.
+
+### Currently Available APIs
+
+The following APIs are currently implemented in **Izem**:
+
+- `console`
+- `setTimeout() / clearTimeout()`
+- `setInterval() / clearInterval()`
+- `URL`
+- `URLSearchParams`
+- `WritableStream`
+- `WritableStreamDefaultWriter`
