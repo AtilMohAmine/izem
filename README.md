@@ -22,11 +22,14 @@ Below is the benchmark bar chart showing the performance of the system during th
 
 ### Installation:
 
-Clone the repository and build the runtime using:
+Clone the repository, install the required dependencies, and build the runtime:
 
 ```bash
 git clone https://github.com/atilmohamine/izem.git
 cd izem
+sudo apt-get update
+sudo apt-get install -y libwebkit2gtk-4.0-dev  # Required for JavaScriptCore
+make deps
 make
 ```
 
