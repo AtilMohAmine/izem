@@ -1,5 +1,5 @@
 # Define the compiler and flags
-NIM = nim
+NIMBLE = nimble
 NIM_FLAGS = -d:release --mm:orc --threads:on --opt:speed
 LDFLAGS = -ljavascriptcoregtk-4.0
 CFLAGS = -I/usr/include/webkitgtk-4.0
@@ -11,15 +11,19 @@ SRC = ./src/runtime.nim
 # Default target
 all: compile
 
+# Install dependencies
+deps:
+	$(NIMBLE) install -y
+
 # Compile the source code
 compile:
 	@mkdir -p $(OUTDIR)
-	$(NIM) c  $(NIM_FLAGS) --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" --outdir:$(OUTDIR) --out:izem $(SRC)
+	$(NIMBLE) c  $(NIM_FLAGS) --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" --outdir:$(OUTDIR) --out:izem $(SRC)
 
 # Compile the source code for debugging
 debug:
 	@mkdir -p $(OUTDIR)
-	$(NIM) c -d:debug --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" --outdir:$(OUTDIR) --out:izem $(SRC)
+	$(NIMBLE) c -d:debug --passL:"$(LDFLAGS)" --passC:"$(CFLAGS)" --outdir:$(OUTDIR) --out:izem $(SRC)
 
 # Phony targets
-.PHONY: all compile debug
+.PHONY: all deps compile debug
