@@ -5,7 +5,6 @@ author        = "Mohamed El Amine Atil"
 description   = "Izem is a blazing fast JavaScript and TypeScript runtime built with Nim 2 and JavaScriptCore"
 license       = "MIT"
 srcDir        = "src"
-bin           = @["izem"]
 
 # Dependencies
 
