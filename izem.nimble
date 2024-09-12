@@ -9,4 +9,4 @@ srcDir        = "src"
 # Dependencies
 
 requires "nim >= 2.0"
-requires "httpbeast"
+requires "https://github.com/atilmohamine/httpbeast-izem#head"
